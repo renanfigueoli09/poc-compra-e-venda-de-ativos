@@ -14,12 +14,13 @@ from src.util.nums import (
     truncate_to_first_significant_digit,
     create_num_witg_zero,
 )
-from src.config.celery_config import app
+from src.config.flask_app import celery
 import requests
 from dotenv import load_dotenv
 load_dotenv()
-@app.task
+@celery.task()
 def start():
+    from src.config.flask_app import celery
     response = requests.get("https://api.ipify.org?format=json")
     ip = response.json()["ip"]
     print(f"Seu IP público de origem é: {ip}")
@@ -50,7 +51,7 @@ def start():
     qaunt_active = convert_usdt_to_btc(
         usdt_balance=usdt_balance, client_binance=client_binance, symbol=active_code_
     )
-    qaunt_active = "{:.{}f}".format(qaunt_active, 5)
+    qaunt_active = truncate_to_first_significant_digit(qaunt_active)
     print(f" {active_operated_}: {qaunt_active}")
 
 

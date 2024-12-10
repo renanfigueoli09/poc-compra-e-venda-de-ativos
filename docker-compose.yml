@@ -18,8 +18,10 @@ services:
     command: bash start.sh
     expose:
       - '${FLOWER_PORT}'
+      - '${FLASK_PORT}'
     ports:
-      - '${FLOWER_PORT}:${FLOWER_PORT}'
+    - "${FLASK_PORT}:${FLASK_PORT}"
+    - "${FLOWER_PORT}:${FLOWER_PORT}"
     volumes:
       - .:/code
     networks:
