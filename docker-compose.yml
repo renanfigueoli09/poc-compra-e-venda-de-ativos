@@ -17,11 +17,11 @@ services:
     build: .
     command: bash start.sh
     expose:
-      - '${FLOWER_PORT}'
+      - '5555'
       - '${FLASK_PORT}'
     ports:
     - "${FLASK_PORT}:${FLASK_PORT}"
-    - "${FLOWER_PORT}:${FLOWER_PORT}"
+    - "5555:5555"
     volumes:
       - .:/code
     networks:
@@ -30,5 +30,6 @@ services:
       LOCAL_HOSTS_REDIS: redis
       DBAAS_SENTINEL_PORT: 6379
       DBAAS_REDIS_HOST: redis://redis:6379/0
+      FLOWER_PORT: 5555
 networks:
   redis-network:

@@ -1,5 +1,6 @@
 hooks:
   build:
+    - pip install flower
     - pip install -r requirements.txt 
 
 # healthcheck:

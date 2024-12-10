@@ -1,5 +1,5 @@
-api_flask: FLASK_APP=src.config.flask_app FLASK_ENV=development flask run --host=0.0.0.0
+api_flask: flask run --host=0.0.0.0
 
-celery_schedule: celery -A src.config.flask_app.celery beat --loglevel=info
-celery_worker: celery -A src.config.flask_app.celery worker --loglevel=info
-flower: celery flower -A src.config.flask_app.celery --port=$FLOWER_PORT
+celery_worker: celery -A app.celery worker --loglevel=info
+schedule: celery -A app.celery beat --loglevel=DEBUG
+flower: celery flower -A app.celery --port=$FLOWER_PORT --broker=$CELERY_BROKER_ENDPOINT_OK
