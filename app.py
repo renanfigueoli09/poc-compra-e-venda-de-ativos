@@ -12,13 +12,11 @@ from src.util.balances import (
 )
 from src.util.nums import (
     truncate_to_first_significant_digit,
-    cont_zero,
     create_num_witg_zero,
 )
-from dotenv import load_dotenv
-
-load_dotenv()
 import requests
+from dotenv import load_dotenv
+load_dotenv()
 
 response = requests.get("https://api.ipify.org?format=json")
 ip = response.json()["ip"]
@@ -42,7 +40,7 @@ print(lot_size_filter, min_qty, max_qty, step_size)
 active_code_ = "BTCUSDT"
 active_operated_ = "BTC"
 purchase_currency = "USDT"
-period_candle = Client.KLINE_INTERVAL_5MINUTE
+period_candle = Client.KLINE_INTERVAL_3MINUTE
 usdt_balance = get_usdt_balance(
     client_binance=client_binance, active_operated=purchase_currency
 )
@@ -103,9 +101,7 @@ def commercial_strategy(data, active_code, active_operated, quant, position):
         if ativo["asset"] == active_operated:
 
             quantidade_atual = float(ativo["free"])
-
     if fast_media_slow > last_media_slow:
-
         if position == False:
 
             order = client_binance.create_order(
@@ -141,7 +137,7 @@ def commercial_strategy(data, active_code, active_operated, quant, position):
     return position
 
 
-current_position = True
+current_position = False
 
 while True:
 

@@ -1,4 +1,8 @@
--i https://artifactory.globoi.com/artifactory/api/pypi/pypi-all/simple
+# -i https://artifactory.globoi.com/artifactory/api/pypi/pypi-all/simple
 python-binance==1.0.25
 pandas==2.2.3
 python-dotenv==1.0.1
+celery==4.3.0
+flower==0.9.7
+redis==4.4.2
+honcho==1.1.0

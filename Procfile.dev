@@ -1,3 +1,3 @@
-celery_schedule: newrelic-admin run-program celery -A src.worker beat --loglevel=$LOG_LEVEL
-celery_worker: newrelic-admin run-program celery -A src.worker worker --loglevel=$LOG_LEVEL --concurrency=1 
-flower: celery flower -A src.worker --purge_offline_workers=10 --port=$PORT
+celery_schedule: celery -A src.config.celery_config.app beat --loglevel=info
+celery_worker: celery -A src.config.celery_config.app worker --loglevel=info
+flower: celery flower -A src.config.celery_config.app --port=$FLOWER_PORT
