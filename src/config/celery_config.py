@@ -18,7 +18,7 @@ app.config_from_object(
         "beat_schedule": {
             "Executa tarefa cada 3 minutos": {
                 "task": "src.tasks.assets.start",
-                "schedule": crontab(minute="*/1"),
+                "schedule": crontab(),
             }
         },
         "include": ["src.tasks.assets"],

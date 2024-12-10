@@ -4,7 +4,7 @@ import time
 import math
 from binance.client import Client
 from binance.enums import *
-from src.config.celery_config import app
+from src.util.minutes_to_seconds import time_string_to_seconds
 from src.util.balances import (
     get_usdt_balance,
     convert_usdt_to_btc,
@@ -14,11 +14,11 @@ from src.util.nums import (
     truncate_to_first_significant_digit,
     create_num_witg_zero,
 )
+from src.config.celery_config import app
 import requests
 from dotenv import load_dotenv
 load_dotenv()
-
-@app.task(bind=True, max_retries=float('inf'), retry_backoff=5, retry_jitter=True)
+@app.task
 def start():
     response = requests.get("https://api.ipify.org?format=json")
     ip = response.json()["ip"]
@@ -50,8 +50,7 @@ def start():
     qaunt_active = convert_usdt_to_btc(
         usdt_balance=usdt_balance, client_binance=client_binance, symbol=active_code_
     )
-    print(qaunt_active)
-    qaunt_active = truncate_to_first_significant_digit(qaunt_active)
+    qaunt_active = "{:.{}f}".format(qaunt_active, 5)
     print(f" {active_operated_}: {qaunt_active}")
 
 
@@ -141,14 +140,15 @@ def start():
 
     current_position = False
 
+    while True:
 
-    dados_atualizados = get_data(codigo=active_code_, intervalo=period_candle)
-    current_position = commercial_strategy(
-        dados_atualizados,
-        active_code=active_code_,
-        active_operated=active_operated_,
-        quant=qaunt_active,
-        position=current_position,
-    )
-    print("aguardando proximo ciclo.....")
-    return current_position
+        dados_atualizados = get_data(codigo=active_code_, intervalo=period_candle)
+        current_position = commercial_strategy(
+            dados_atualizados,
+            active_code=active_code_,
+            active_operated=active_operated_,
+            quant=qaunt_active,
+            position=current_position,
+        )
+        print(f"aguardando proximo ciclo.... {period_candle}")
+        time.sleep(time_string_to_seconds(time_string=period_candle))
