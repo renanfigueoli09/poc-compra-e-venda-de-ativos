@@ -16,11 +16,11 @@ app.config_from_object(
         "timezone": "UTC",  # Definir timezone para as tarefas
         "enable_utc": True,  # Habilitar UTC]
         "beat_schedule": {
-            "Executa tarefa cada 1 minutos": {
-                "task": "src.task.add",
+            "Executa tarefa cada 3 minutos": {
+                "task": "src.tasks.assets.start",
                 "schedule": crontab(minute="*/1"),
             }
         },
-        "include": ["src.task"],
+        "include": ["src.tasks.assets"],
     }
 )

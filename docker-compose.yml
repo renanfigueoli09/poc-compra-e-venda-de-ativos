@@ -28,13 +28,5 @@ services:
       LOCAL_HOSTS_REDIS: redis
       DBAAS_SENTINEL_PORT: 6379
       DBAAS_REDIS_HOST: redis://redis:6379/0
-
-  # flower:
-  #   build: .
-  #   command: flower --broker=redis://redis:6379/0
-  #   ports:
-  #     - "5555:5555"
-  #   depends_on:
-  #     - redis
 networks:
   redis-network:
