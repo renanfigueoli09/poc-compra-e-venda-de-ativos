@@ -9,3 +9,4 @@ honcho==1.1.0
 Flask
 Flask-Caching
 flask-cors
+newrelic==8.5.0

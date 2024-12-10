@@ -14,13 +14,13 @@ from src.util.nums import (
     truncate_to_first_significant_digit,
     create_num_witg_zero,
 )
-from src.config.flask_app import celery
+from app import celery
 import requests
 from dotenv import load_dotenv
 load_dotenv()
 @celery.task()
 def start():
-    from src.config.flask_app import celery
+    from app import celery
     response = requests.get("https://api.ipify.org?format=json")
     ip = response.json()["ip"]
     print(f"Seu IP público de origem é: {ip}")

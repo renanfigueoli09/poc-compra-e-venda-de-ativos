@@ -1,4 +1,4 @@
 from src.routes.route import init
-from src.config.flask_app import app
+from app import flask_app
 
-init(app)
+init(flask_app)

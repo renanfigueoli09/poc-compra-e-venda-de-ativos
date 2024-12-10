@@ -29,7 +29,7 @@ services:
     environment:
       LOCAL_HOSTS_REDIS: redis
       DBAAS_SENTINEL_PORT: 6379
-      DBAAS_REDIS_HOST: redis://redis:6379/0
+      DBAAS_REDIS_ENDPOINT: redis://redis:6379/0
       FLOWER_PORT: 5555
 networks:
-  redis-network:
+  redis-network:  
