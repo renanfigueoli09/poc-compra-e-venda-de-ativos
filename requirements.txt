@@ -10,3 +10,5 @@ Flask
 Flask-Caching
 flask-cors
 newrelic==8.5.0
+pymongo==3.11.3
+kombu

@@ -1,5 +1,5 @@
 api_flask: flask run --host=0.0.0.0
 
-celery_worker: celery -A app.celery worker --loglevel=info
+celery_worker: celery -A app.celery worker --loglevel=info --without-gossip --without-mingle
 schedule: celery -A app.celery beat --loglevel=DEBUG
-flower: celery flower -A app.celery --port=$FLOWER_PORT --broker=$DBAAS_REDIS_ENDPOINT
+flower: celery flower -A app.celery --port=$FLOWER_PORT 

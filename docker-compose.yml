@@ -1,35 +1,136 @@
-version: '3'
+version: "3.9"
+
 services:
-  redis:
+  mongodb:
+      image: mongo
+      container_name: mongodb
+      hostname: mongodb
+      ports:
+        - "27017:27017"
+      attach: false # desabilita os logs do mongo
+      networks:
+       redis-net:
+        ipv4_address: 172.21.0.9
+      command: mongod --bind_ip_all
+
+  redis_master:
     image: redis:latest
-    container_name: redis
+    container_name: redis_master
+    hostname: redis_master
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     volumes:
-        - .:/code
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+      # - ./redis/data:/data
+      # - ./redis/logs:/var/log/redis
     ports:
-      - '6379:6379'
+      - "6379:6379"
+    expose:
+      - 6379
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
     networks:
-      - redis-network
+      redis-net:
+        ipv4_address: 172.21.0.3
+
+  redis-slave:
+    image: redis:latest
+    container_name: redis-slave
+    command: ["redis-server", "/usr/local/etc/redis/redis-slave.conf"]
+    volumes:
+      - ./redis/redis-slave.conf:/usr/local/etc/redis/redis-slave.conf
+      # - ./redis/data:/data
+      # - ./redis/logs:/var/log/redis
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.4
+      
+
+
+  sentinel1:
+    image: redis:latest
+    container_name: sentinel1
+    hostname: sentinel1
+    depends_on:
+      - redis_master
+    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
+    volumes:
+      - ./redis/sentinel.conf:/usr/local/etc/redis/sentinel.conf
+    ports:
+      - "26379:26379"
+    # expose:
+    #   - 26379
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.5
+
+  sentinel2:
+    image: redis:latest
+    container_name: sentinel2
+    hostname: sentinel2
+    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
+    volumes:
+      - ./redis/sentinel.conf:/usr/local/etc/redis/sentinel.conf
+      # - ./redis/logs:/var/log/redis
+    ports:
+      - "26380:26379"
+    expose:
+      - 26379
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.6
+
+
+  sentinel3:
+    image: redis:latest
+    container_name: sentinel3
+    hostname: sentinel3
+    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
+    volumes:
+      - ./redis/sentinel.conf:/usr/local/etc/redis/sentinel.conf
+      # - ./redis/logs:/var/log/redis
+    ports:
+      - "26381:26379"
+    expose:
+      - 26379
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.7
 
   celery:
     depends_on:
-      - redis
-      # - mongodb
-    build: .
-    command: bash start.sh
+      - mongodb
+      - redis_master
+      - sentinel1
+      - sentinel2
+      - sentinel3
+    build:
+      context: .
     expose:
-      - '5555'
-      - '${FLASK_PORT}'
+      - "5555"
     ports:
-    - "${FLASK_PORT}:${FLASK_PORT}"
-    - "5555:5555"
+      - "${FLASK_PORT}:${FLASK_PORT}" # Porta da aplicação Flask, se estiver definida
+      - "5555:5555" # Porta para Flower
     volumes:
       - .:/code
     networks:
-      - redis-network
+      redis-net:
+        ipv4_address: 172.21.0.8
     environment:
-      LOCAL_HOSTS_REDIS: redis
-      DBAAS_SENTINEL_PORT: 6379
-      DBAAS_REDIS_ENDPOINT: redis://redis:6379/0
+      FLASK_PORT: 5000 # Define a porta padrão, substitua conforme necessário
+      # CELERY_BROKER_ENDPOINT: "redis://redis_master:6379/0"
+      DBAAS_SENTINEL_HOSTS: 'sentinel1,sentinel2,sentinel3'
+      DBAAS_SENTINEL_PORT: 26379
+      DBAAS_SENTINEL_PASSWORD: ''
+      DBAAS_SENTINEL_SERVICE_NAME: cluster1
       FLOWER_PORT: 5555
+      DBAAS_MONGODB_ENDPOINT: mongodb://mongodb:27017
+      CELERY_BROKER_ENDPOINT: 'sentinel://sentinel1:26379/0;sentinel://sentinel2:26379/0;sentinel://sentinel3:26379/0'
+
 networks:
-  redis-network:  
+  redis-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+    
+
