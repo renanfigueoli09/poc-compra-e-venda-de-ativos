@@ -1,18 +1,6 @@
 version: "3.9"
 
 services:
-  # mongodb:
-  #     image: mongo
-  #     container_name: mongodb
-  #     hostname: mongodb
-  #     ports:
-  #       - "27017:27017"
-  #     attach: false # desabilita os logs do mongo
-  #     networks:
-  #      redis-net:
-  #       ipv4_address: 172.21.0.9
-  #     command: mongod --bind_ip_all
-
   redis-master:
     image: redis
     container_name: redis-master
@@ -30,8 +18,6 @@ services:
       - redis-master
     volumes:
       - ./redis/redis-slave.conf:/usr/local/etc/redis/redis-slave.conf
-      # - ./redis/data:/data
-      # - ./redis/logs:/var/log/redis
     networks:
       redis-net:
         ipv4_address: 172.21.0.4
