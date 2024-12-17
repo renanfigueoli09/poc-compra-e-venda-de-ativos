@@ -1,17 +1,17 @@
 version: "3.9"
 
 services:
-  mongodb:
-      image: mongo
-      container_name: mongodb
-      hostname: mongodb
-      ports:
-        - "27017:27017"
-      attach: false # desabilita os logs do mongo
-      networks:
-       redis-net:
-        ipv4_address: 172.21.0.9
-      command: mongod --bind_ip_all
+  # mongodb:
+  #     image: mongo
+  #     container_name: mongodb
+  #     hostname: mongodb
+  #     ports:
+  #       - "27017:27017"
+  #     attach: false # desabilita os logs do mongo
+  #     networks:
+  #      redis-net:
+  #       ipv4_address: 172.21.0.9
+  #     command: mongod --bind_ip_all
 
   redis_master:
     image: redis:latest
@@ -24,10 +24,10 @@ services:
       # - ./redis/logs:/var/log/redis
     ports:
       - "6379:6379"
-    expose:
-      - 6379
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes
+    # expose:
+    #   - 6379
+    # environment:
+    #   - ALLOW_EMPTY_PASSWORD=yes
     networks:
       redis-net:
         ipv4_address: 172.21.0.3
@@ -40,6 +40,8 @@ services:
       - ./redis/redis-slave.conf:/usr/local/etc/redis/redis-slave.conf
       # - ./redis/data:/data
       # - ./redis/logs:/var/log/redis
+    logging:
+      driver: "none" 
     networks:
       redis-net:
         ipv4_address: 172.21.0.4
@@ -54,7 +56,9 @@ services:
       - redis_master
     command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
     volumes:
+      - ./redis/sentinel.conf:/usr/local/etc/redis/sentinel.conf:ro
       - ./redis/sentinel.conf:/usr/local/etc/redis/sentinel.conf
+      
     ports:
       - "26379:26379"
     # expose:
@@ -63,46 +67,46 @@ services:
       redis-net:
         ipv4_address: 172.21.0.5
 
-  sentinel2:
-    image: redis:latest
-    container_name: sentinel2
-    hostname: sentinel2
-    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
-    volumes:
-      - ./redis/sentinel.conf:/usr/local/etc/redis/sentinel.conf
-      # - ./redis/logs:/var/log/redis
-    ports:
-      - "26380:26379"
-    expose:
-      - 26379
-    networks:
-      redis-net:
-        ipv4_address: 172.21.0.6
+  # sentinel2:
+  #   image: redis:latest
+  #   container_name: sentinel2
+  #   hostname: sentinel2
+  #   command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
+  #   volumes:
+  #     - ./redis/sentinel.conf:/usr/local/etc/redis/sentinel.conf
+  #     # - ./redis/logs:/var/log/redis
+  #   ports:
+  #     - "26380:26379"
+  #   # expose:
+  #   #   - 26379
+  #   networks:
+  #     redis-net:
+  #       ipv4_address: 172.21.0.6
 
 
-  sentinel3:
-    image: redis:latest
-    container_name: sentinel3
-    hostname: sentinel3
-    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
-    volumes:
-      - ./redis/sentinel.conf:/usr/local/etc/redis/sentinel.conf
-      # - ./redis/logs:/var/log/redis
-    ports:
-      - "26381:26379"
-    expose:
-      - 26379
-    networks:
-      redis-net:
-        ipv4_address: 172.21.0.7
+  # sentinel3:
+  #   image: redis:latest
+  #   container_name: sentinel3
+  #   hostname: sentinel3
+  #   command: ["redis-sentinel", "/usr/local/etc/redis/sentinel.conf"]
+  #   volumes:
+  #     - ./redis/sentinel.conf:/usr/local/etc/redis/sentinel.conf
+  #     # - ./redis/logs:/var/log/redis
+  #   ports:
+  #     - "26381:26379"
+  #   # expose:
+  #   #   - 26379
+  #   networks:
+  #     redis-net:
+  #       ipv4_address: 172.21.0.7
 
   celery:
     depends_on:
-      - mongodb
+      # - mongodb
       - redis_master
       - sentinel1
-      - sentinel2
-      - sentinel3
+      # - sentinel2
+      # - sentinel3
     build:
       context: .
     expose:
@@ -120,11 +124,11 @@ services:
       # CELERY_BROKER_ENDPOINT: "redis://redis_master:6379/0"
       DBAAS_SENTINEL_HOSTS: 'sentinel1,sentinel2,sentinel3'
       DBAAS_SENTINEL_PORT: 26379
-      DBAAS_SENTINEL_PASSWORD: ''
-      DBAAS_SENTINEL_SERVICE_NAME: cluster1
+      DBAAS_SENTINEL_SERVICE_NAME: redis_master
       FLOWER_PORT: 5555
       DBAAS_MONGODB_ENDPOINT: mongodb://mongodb:27017
       CELERY_BROKER_ENDPOINT: 'sentinel://sentinel1:26379/0;sentinel://sentinel2:26379/0;sentinel://sentinel3:26379/0'
+      DBAAS_SENTINEL_ENDPOINT: sentinel://sentinel:26379,sentinel2:26380,sentinel3:26381/service_name:redis_master
 
 networks:
   redis-net:
