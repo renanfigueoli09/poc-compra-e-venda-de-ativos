@@ -10,6 +10,7 @@ def make_celery(app):
     DBAAS_SENTINEL_PORT = os.getenv("DBAAS_SENTINEL_PORT")
     DBAAS_SENTINEL_ENDPOINT = os.getenv("DBAAS_SENTINEL_ENDPOINT")
     DBAAS_SENTINEL_PASSWORD = os.getenv("DBAAS_SENTINEL_PASSWORD")
+    DBAAS_SENTINEL_SERVICE_NAME = os.getenv("DBAAS_SENTINEL_SERVICE_NAME")
     print(DBAAS_SENTINEL_ENDPOINT)
     sentinel_hosts_list = [
         (host, DBAAS_SENTINEL_PORT) for host in DBAAS_SENTINEL_HOSTS.split(",")
@@ -19,7 +20,7 @@ def make_celery(app):
         socket_timeout=0.1,
         password=DBAAS_SENTINEL_PASSWORD,
     )
-    master = sentinel.discover_master("mymaster")
+    master = sentinel.discover_master(DBAAS_SENTINEL_SERVICE_NAME)
     sentinel_urls = f"redis://{master[0]}:{master[1]}/0"
     celery = Celery(
         broker=sentinel_urls,
