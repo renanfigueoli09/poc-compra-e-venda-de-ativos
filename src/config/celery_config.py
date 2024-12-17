@@ -5,7 +5,7 @@ load_dotenv()
 from celery import Celery
 from redis.sentinel import Sentinel
 
-def make_celery(app):
+def make_celery():
     DBAAS_SENTINEL_HOSTS = os.getenv("DBAAS_SENTINEL_HOSTS")
     DBAAS_SENTINEL_PORT = os.getenv("DBAAS_SENTINEL_PORT")
     DBAAS_SENTINEL_ENDPOINT = os.getenv("DBAAS_SENTINEL_ENDPOINT")
@@ -21,7 +21,7 @@ def make_celery(app):
         password=DBAAS_SENTINEL_PASSWORD,
     )
     master = sentinel.discover_master(DBAAS_SENTINEL_SERVICE_NAME)
-    sentinel_urls = f"redis://{master[0]}:{master[1]}/0"
+    sentinel_urls = f"redis://:{DBAAS_SENTINEL_PASSWORD}@{master[0]}:{master[1]}/0"
     celery = Celery(
         broker=sentinel_urls,
         backend=sentinel_urls,

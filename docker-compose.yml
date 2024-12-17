@@ -4,6 +4,7 @@ services:
   redis-master:
     image: redis
     container_name: redis-master
+    command: ["redis-server", "--requirepass", "redis_pass"]
     attach: false
     networks:
       redis-net:
