@@ -1,5 +1,6 @@
 api_flask: flask run --host=0.0.0.0
 
-celery_worker: celery -A app.celery worker --loglevel=info --without-gossip --without-mingle
+#celery_worker: celery -A app.celery worker --loglevel=info --without-gossip --without-mingle
+celery_worker_boot: celery -A app.celery worker -Q boot --loglevel=info -E -n BOOT@%h 
 schedule: celery -A app.celery beat --loglevel=DEBUG
 flower: celery flower -A app.celery --port=$FLOWER_PORT 

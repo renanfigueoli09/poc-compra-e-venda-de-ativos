@@ -2,13 +2,14 @@ import pandas as pd
 import os
 import time
 import math
-from binance.client import Client
+from binance.client import Client, BinanceRequestException
 from binance.enums import *
 from src.util.minutes_to_seconds import time_string_to_seconds
 from src.util.balances import (
     get_usdt_balance,
     convert_usdt_to_btc,
     synchronize_binance_time,
+    is_usdt_balance_greater,
 )
 from src.util.nums import (
     truncate_to_first_significant_digit,
@@ -17,10 +18,14 @@ from src.util.nums import (
 from app import celery
 import requests
 from dotenv import load_dotenv
+
 load_dotenv()
-@celery.task()
-def start():
+
+
+@celery.task(queue="boot")
+def boot():
     from app import celery
+
     response = requests.get("https://api.ipify.org?format=json")
     ip = response.json()["ip"]
     print(f"Seu IP público de origem é: {ip}")
@@ -51,105 +56,126 @@ def start():
     qaunt_active = convert_usdt_to_btc(
         usdt_balance=usdt_balance, client_binance=client_binance, symbol=active_code_
     )
+    print(qaunt_active)
     qaunt_active = truncate_to_first_significant_digit(qaunt_active)
     print(f" {active_operated_}: {qaunt_active}")
 
-
     def get_data(codigo, intervalo):
+        try:
+            candles = client_binance.get_klines(
+                symbol=codigo, interval=intervalo, limit=1000
+            )
+            price = pd.DataFrame(candles)
+            price.columns = [
+                "tempo_abertura",
+                "abertura",
+                "maxima",
+                "minima",
+                "fechamento",
+                "volume",
+                "tempo_fechamento",
+                "moedas_negociadas",
+                "numero_trades",
+                "volume_ativo_base_compra",
+                "volume_ativo_cotação",
+                "-",
+            ]
+            price = price[["fechamento", "tempo_fechamento"]]
+            price["tempo_fechamento"] = pd.to_datetime(
+                price["tempo_fechamento"], unit="ms"
+            ).dt.tz_localize("UTC")
+            price["tempo_fechamento"] = price["tempo_fechamento"].dt.tz_convert(
+                "America/Sao_Paulo"
+            )
 
-        candles = client_binance.get_klines(symbol=codigo, interval=intervalo, limit=1000)
-        price = pd.DataFrame(candles)
-        price.columns = [
-            "tempo_abertura",
-            "abertura",
-            "maxima",
-            "minima",
-            "fechamento",
-            "volume",
-            "tempo_fechamento",
-            "moedas_negociadas",
-            "numero_trades",
-            "volume_ativo_base_compra",
-            "volume_ativo_cotação",
-            "-",
-        ]
-        price = price[["fechamento", "tempo_fechamento"]]
-        price["tempo_fechamento"] = pd.to_datetime(
-            price["tempo_fechamento"], unit="ms"
-        ).dt.tz_localize("UTC")
-        price["tempo_fechamento"] = price["tempo_fechamento"].dt.tz_convert(
-            "America/Sao_Paulo"
-        )
-
-        return price
-
+            return price
+        except BinanceRequestException as  Ex:
+            raise {"error": Ex}
 
     def commercial_strategy(data, active_code, active_operated, quant, position):
+        try:
+            data["media_rapida"] = data["fechamento"].rolling(window=7).mean()
+            data["media_devagar"] = data["fechamento"].rolling(window=40).mean()
 
-        data["media_rapida"] = data["fechamento"].rolling(window=7).mean()
-        data["media_devagar"] = data["fechamento"].rolling(window=40).mean()
+            fast_media_slow = data["media_rapida"].iloc[-1]
+            last_media_slow = data["media_devagar"].iloc[-1]
 
-        fast_media_slow = data["media_rapida"].iloc[-1]
-        last_media_slow = data["media_devagar"].iloc[-1]
+            print(
+                f"Última Média Rápida: {fast_media_slow} | Última Média Devagar: {last_media_slow}"
+            )
 
-        print(
-            f"Última Média Rápida: {fast_media_slow} | Última Média Devagar: {last_media_slow}"
-        )
+            account = client_binance.get_account()
 
-        account = client_binance.get_account()
+            for ativo in account["balances"]:
 
-        for ativo in account["balances"]:
+                if ativo["asset"] == active_operated:
 
-            if ativo["asset"] == active_operated:
+                    quantidade_atual = float(ativo["free"])
+            if fast_media_slow > last_media_slow:
+                if position == False:
+                    print(quant)
+                    order = client_binance.create_order(
+                        symbol=active_code,
+                        side=SIDE_BUY,
+                        type=ORDER_TYPE_MARKET,
+                        quantity=quant,
+                    )
 
-                quantidade_atual = float(ativo["free"])
-        if fast_media_slow > last_media_slow:
-            if position == False:
+                    print(order)
+                    print("COMPROU O ATIVO")
 
-                order = client_binance.create_order(
-                    symbol=active_code,
-                    side=SIDE_BUY,
-                    type=ORDER_TYPE_MARKET,
-                    quantity=quant,
-                )
+                    position = True
 
-                print(order)
-                print("COMPROU O ATIVO")
+            elif fast_media_slow < last_media_slow:
 
-                position = True
+                if position == True:
+                    q = create_num_witg_zero(num=float(qaunt_active))
+                    quantity = int(quantidade_atual * q) / q
+                    quantity = "{:.{}f}".format(quantity, 4)
+                    print(quantity)
+                    order = client_binance.create_order(
+                        symbol=active_code,
+                        side=SIDE_SELL,
+                        type=ORDER_TYPE_MARKET,
+                        quantity=quantity,
+                    )
+                    print(order)
+                    print("VENDER O ATIVO")
 
-        elif fast_media_slow < last_media_slow:
+                    position = False
 
-            if position == True:
-                q = create_num_witg_zero(num=float(qaunt_active))
-                quantity = int(quantidade_atual * q) / q
-                quantity = "{:.{}f}".format(quantity, 4)
-                print(quantity)
-                order = client_binance.create_order(
-                    symbol=active_code,
-                    side=SIDE_SELL,
-                    type=ORDER_TYPE_MARKET,
-                    quantity=quantity,
-                )
-                print(order)
-                print("VENDER O ATIVO")
+            return position
+        except BinanceRequestException as  Ex:
+            raise {"error": Ex}
 
-                position = False
-
-        return position
-
-
-    current_position = False
-
-    while True:
-
-        dados_atualizados = get_data(codigo=active_code_, intervalo=period_candle)
+    current_position = is_usdt_balance_greater(client_binance)
+    print("current_position")
+    print(current_position)
+    try:
+        update_date = get_data(codigo=active_code_, intervalo=period_candle)
         current_position = commercial_strategy(
-            dados_atualizados,
+            update_date,
             active_code=active_code_,
             active_operated=active_operated_,
             quant=qaunt_active,
             position=current_position,
         )
         print(f"aguardando proximo ciclo.... {period_candle}")
-        time.sleep(time_string_to_seconds(time_string=period_candle))
+        return {
+            "current_position": current_position
+        }
+    except BinanceRequestException as  Ex:
+        raise {"error": Ex}
+        
+    # while True:
+
+    #     update_date = get_data(codigo=active_code_, intervalo=period_candle)
+    #     current_position = commercial_strategy(
+    #         update_date,
+    #         active_code=active_code_,
+    #         active_operated=active_operated_,
+    #         quant=qaunt_active,
+    #         position=current_position,
+    #     )
+    #     print(f"aguardando proximo ciclo.... {period_candle}")
+    #     time.sleep(time_string_to_seconds(time_string=period_candle))

@@ -1,7 +1,7 @@
-from src.tasks.assets import  start
+from src.tasks.assets import boot
 
 def init(flask_app):
     @flask_app.route("/start")
     def index():
-        start.apply_async()
+        boot.apply_async()
         return {"status": "iniciado"}

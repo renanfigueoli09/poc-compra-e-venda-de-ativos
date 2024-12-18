@@ -1,11 +1,14 @@
 import os
 import re
 from dotenv import load_dotenv
+
 load_dotenv()
 from celery import Celery
 from redis.sentinel import Sentinel
+from celery.schedules import crontab
 
-def make_celery():
+
+def make_celery(app):
     DBAAS_SENTINEL_HOSTS = os.getenv("DBAAS_SENTINEL_HOSTS")
     DBAAS_SENTINEL_PORT = os.getenv("DBAAS_SENTINEL_PORT")
     DBAAS_SENTINEL_ENDPOINT = os.getenv("DBAAS_SENTINEL_ENDPOINT")
@@ -24,6 +27,7 @@ def make_celery():
     sentinel_urls = f"redis://:{DBAAS_SENTINEL_PASSWORD}@{master[0]}:{master[1]}/0"
     print(sentinel_urls)
     celery = Celery(
+        app.import_name,
         broker=sentinel_urls,
         backend=sentinel_urls,
         enable_utc=True,
@@ -38,4 +42,11 @@ def make_celery():
         ),
         date_time_format="%Y-%m-%dT%H:%M:%S%z",
     )
+
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
     return celery
