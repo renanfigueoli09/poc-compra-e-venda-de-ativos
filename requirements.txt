@@ -4,6 +4,7 @@ pandas==2.2.3
 python-dotenv==1.0.1
 celery==4.3.0
 flower==0.9.7
+Sentinel
 redis==4.4.2
 honcho==1.1.0
 Flask

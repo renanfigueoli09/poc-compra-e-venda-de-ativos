@@ -17,11 +17,12 @@ def make_celery():
     ]
     sentinel = Sentinel(
         sentinels=sentinel_hosts_list,
-        socket_timeout=0.1,
+        socket_timeout=2.0,
         password=DBAAS_SENTINEL_PASSWORD,
     )
     master = sentinel.discover_master(DBAAS_SENTINEL_SERVICE_NAME)
     sentinel_urls = f"redis://:{DBAAS_SENTINEL_PASSWORD}@{master[0]}:{master[1]}/0"
+    print(sentinel_urls)
     celery = Celery(
         broker=sentinel_urls,
         backend=sentinel_urls,
@@ -37,10 +38,4 @@ def make_celery():
         ),
         date_time_format="%Y-%m-%dT%H:%M:%S%z",
     )
-    class ContextTask(celery.Task):
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return self.run(*args, **kwargs)
-
-    celery.Task = ContextTask
     return celery
