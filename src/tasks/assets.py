@@ -31,8 +31,7 @@ def boot():
 
     api_key = os.getenv("API_KEY")
     secret_key = os.getenv("API_SECRET")
-    print(api_key)
-    client_binance = Client(api_key, secret_key)
+    client_binance = Client(api_key, secret_key,)
     client_binance.ping()
     synchronize_binance_time(client_binance)
 
@@ -111,7 +110,7 @@ def boot():
 
                 if ativo["asset"] == active_operated:
 
-                    quantidade_atual = float(ativo["free"])
+                    current_quantity = float(ativo["free"])
             if fast_media_slow > last_media_slow:
                 if position == False:
                     print(quant)
@@ -130,8 +129,8 @@ def boot():
             elif fast_media_slow < last_media_slow:
 
                 if position == True:
-                    q = create_num_witg_zero(num=float(qaunt_active))
-                    quantity = int(quantidade_atual * q) / q
+                    print(current_quantity)
+                    quantity = current_quantity
                     quantity = "{:.{}f}".format(quantity, 4)
                     print(quantity)
                     order = client_binance.create_order(
