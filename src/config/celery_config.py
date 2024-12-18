@@ -30,7 +30,7 @@ def make_celery(app):
         app.import_name,
         broker=sentinel_urls,
         backend=sentinel_urls,
-        enable_utc=True,
+        enable_utc=False,
         timezone="America/Sao_Paulo",
         task_serializer="json",
         accept_content=["json"],

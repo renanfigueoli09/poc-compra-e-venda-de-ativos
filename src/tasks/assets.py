@@ -18,7 +18,6 @@ from src.util.nums import (
 from app import celery
 import requests
 from dotenv import load_dotenv
-
 load_dotenv()
 
 
@@ -32,7 +31,9 @@ def boot():
 
     api_key = os.getenv("API_KEY")
     secret_key = os.getenv("API_SECRET")
+    print(api_key)
     client_binance = Client(api_key, secret_key)
+    client_binance.ping()
     synchronize_binance_time(client_binance)
 
     symbol_info = client_binance.get_symbol_info("BTCUSDT")
