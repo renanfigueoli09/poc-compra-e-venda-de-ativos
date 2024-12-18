@@ -5,6 +5,9 @@ services:
     image: redis
     container_name: redis-master
     command: ["redis-server", "--requirepass", "redis_pass"]
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     attach: false
     networks:
       redis-net:
@@ -19,6 +22,8 @@ services:
       - redis-master
     volumes:
       - ./redis/redis-slave.conf:/usr/local/etc/redis/redis-slave.conf
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     networks:
       redis-net:
         ipv4_address: 172.21.0.4
@@ -28,6 +33,8 @@ services:
     container_name: redis-sentinel
     volumes:
       - ./redis/sentinel.conf:/etc/redis/sentinel.conf
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     command: ["redis-sentinel", "/etc/redis/sentinel.conf"]
     networks:
       redis-net:
@@ -42,6 +49,8 @@ services:
     container_name: redis-sentinel2
     volumes:
       - ./redis/sentinel.conf:/etc/redis/sentinel.conf
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     command: ["redis-sentinel", "/etc/redis/sentinel.conf"]
     networks:
       redis-net:
@@ -56,6 +65,8 @@ services:
     container_name: redis-sentinel3
     volumes:
       - ./redis/sentinel.conf:/etc/redis/sentinel.conf
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     command: ["redis-sentinel", "/etc/redis/sentinel.conf"]
     networks:
       redis-net:
@@ -71,25 +82,28 @@ services:
       - redis-sentinel
       - redis-sentinel2
       - redis-sentinel3
+      
     build:
       context: .
     expose:
       - "5555"
     ports:
-      - "${FLASK_PORT}:${FLASK_PORT}" 
+      - "5000:5000" 
       - "5555:5555" 
     volumes:
       - .:/code
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     networks:
       redis-net:
         ipv4_address: 172.21.0.8
     environment:
       FLASK_PORT: 5000 
+      FLOWER_PORT: 5555
       DBAAS_SENTINEL_HOSTS: 'redis-sentinel,redis-sentinel2,redis-sentinel3'
       DBAAS_SENTINEL_PORT: 26379
       DBAAS_SENTINEL_SERVICE_NAME: mymaster
       DBAAS_SENTINEL_PASSWORD: redis_pass
-      FLOWER_PORT: 5555
 
 networks:
   redis-net:

@@ -20,7 +20,7 @@ RUN pip install flower
 
 # Install project dependencies
 RUN pip install -r requirements.txt
-
+RUN apt-get update && apt-get install -y ntp
 # Expose the Flower port (default is 5555, adjust if needed)
 EXPOSE 5555
 EXPOSE 5672

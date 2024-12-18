@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 def get_usdt_balance(client_binance,active_operated):
     """
     Consulta o saldo de operador ativo na conta da Binance.
@@ -31,13 +33,20 @@ import time
 from binance.client import BinanceAPIException
 def synchronize_binance_time(client):
     try:
-        server_time = client.get_server_time()["serverTime"]
+        # Obtém o horário do servidor da Binance (em UTC)
+        server_time = client.get_server_time()["serverTime"]  # Em milissegundos
         local_time = int(time.time() * 1000)
+        
+        # Calcula a diferença
         time_difference = server_time - local_time
         print(f"Desvio de horário detectado: {time_difference}ms")
-        if abs(time_difference) > 1000:  # Se a diferença for maior que 1 segundo
-            print("Ajustando o horário local...")
-            adjusted_time = local_time + time_difference
-            print(f"Horário ajustado para: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(adjusted_time / 1000))}")
+
+        if abs(time_difference) > 1000:
+            # Ajustar para o horário local com offset de fuso horário (ex.: UTC-3)
+            local_offset = -3  # Fuso horário em horas
+            adjusted_time = datetime.fromtimestamp(server_time / 1000, tz=timezone.utc) + timedelta(hours=local_offset)
+            print(f"Horário ajustado (sincronizado): {adjusted_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        else:
+            print("Horário local está sincronizado com o servidor Binance.")
     except BinanceAPIException as e:
-         print(f"Erro ao sincronizar com o servidor Binance: {e}")
+        print(f"Erro ao sincronizar com o servidor Binance: {e}")
