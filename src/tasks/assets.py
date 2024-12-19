@@ -56,10 +56,9 @@ def boot():
     qaunt_active = convert_usdt_to_btc(
         usdt_balance=usdt_balance, client_binance=client_binance, symbol=active_code_
     )
-    print(qaunt_active)
     qaunt_active = truncate_to_first_significant_digit(qaunt_active)
     print(f" {active_operated_}: {qaunt_active}")
-
+    print(qaunt_active)
     def get_data(codigo, intervalo):
         try:
             candles = client_binance.get_klines(
@@ -131,7 +130,7 @@ def boot():
                 if position == True:
                     print(current_quantity)
                     quantity = current_quantity
-                    quantity = "{:.{}f}".format(quantity, 4)
+                    quantity = "{:.{}f}".format(quantity, 5)
                     print(quantity)
                     order = client_binance.create_order(
                         symbol=active_code,
