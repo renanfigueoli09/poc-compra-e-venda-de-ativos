@@ -112,6 +112,7 @@ def boot():
                     current_quantity = float(ativo["free"])
             if fast_media_slow > last_media_slow:
                 if position == False:
+                    print("comprando....")
                     print(quant)
                     order = client_binance.create_order(
                         symbol=active_code,
@@ -128,9 +129,8 @@ def boot():
             elif fast_media_slow < last_media_slow:
 
                 if position == True:
-                    print(current_quantity)
-                    quantity = current_quantity
-                    quantity = "{:.{}f}".format(quantity, 5)
+                    print("vendendo.....")
+                    quantity = "{:.{}f}".format(current_quantity, 4)
                     print(quantity)
                     order = client_binance.create_order(
                         symbol=active_code,
