@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta, timezone
+from binance.client import Client, BinanceAPIException
+import time
 def get_usdt_balance(client_binance,active_operated):
     """
     Consulta o saldo de operador ativo na conta da Binance.
@@ -27,17 +30,51 @@ def convert_usdt_to_btc(usdt_balance, client_binance, symbol):
         return None
 
 
-import time
-from binance.client import BinanceAPIException
-def synchronize_binance_time(client):
+def synchronize_binance_time(client: Client):
     try:
-        server_time = client.get_server_time()["serverTime"]
+        # Obtém o horário do servidor da Binance (em UTC)
+        server_time = client.get_server_time()["serverTime"]  # Em milissegundos
         local_time = int(time.time() * 1000)
+        
+        # Calcula a diferença
         time_difference = server_time - local_time
         print(f"Desvio de horário detectado: {time_difference}ms")
-        if abs(time_difference) > 1000:  # Se a diferença for maior que 1 segundo
-            print("Ajustando o horário local...")
-            adjusted_time = local_time + time_difference
-            print(f"Horário ajustado para: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(adjusted_time / 1000))}")
+
+        if abs(time_difference) > 1000:
+            # Ajustar para o horário local com offset de fuso horário (ex.: UTC-3)
+            local_offset = -3  # Fuso horário em horas
+            adjusted_time = datetime.fromtimestamp(server_time / 1000, tz=timezone.utc) + timedelta(hours=local_offset)
+            print(f"Horário ajustado (sincronizado): {adjusted_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            return adjusted_time
+        else:
+            print("Horário local está sincronizado com o servidor Binance.")
+            return None  # Nenhuma alteração no horário
     except BinanceAPIException as e:
-         print(f"Erro ao sincronizar com o servidor Binance: {e}")
+        print(f"Erro ao sincronizar com o servidor Binance: {e}")
+        
+def is_usdt_balance_greater(client: Client) -> bool:
+    """
+    Compara o saldo em USDT com o saldo em BTC na conta Binance e 
+    retorna True se o saldo em USDT for maior que o equivalente em BTC, False caso contrário.
+
+    Args:
+        client (Client): Instância autenticada do cliente Binance.
+    
+    Returns:
+        bool: True se o saldo em USDT for maior, False caso contrário.
+    """
+    try:
+        account_info = client.get_account()
+        balances = {item['asset']: float(item['free']) for item in account_info['balances']}
+        usdt_balance = balances.get('USDT', 0.0)
+        btc_balance = balances.get('BTC', 0.0)
+        btc_price = float(client.get_symbol_ticker(symbol="BTCUSDT")['price'])
+        btc_in_usdt = btc_balance * btc_price
+        print(f"Saldo em USDT: {usdt_balance}")
+        print(f"Saldo em BTC (em USDT): {btc_in_usdt}")
+
+        return usdt_balance < btc_in_usdt
+
+    except BinanceAPIException as e:
+        print(f"Erro ao obter os saldos ou preços: {e}")
+        return False

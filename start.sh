@@ -12,4 +12,5 @@ rm celerybeat.pid
 chmod +x /code/scripts/*.sh
 cp /code/scripts/*.sh  /usr/local/bin/
 echo "Iniciando worker habilitados em Procfile.dev"
+bash -c "service ntp start && celery -A sua_app worker"
 honcho -f Procfile.dev start

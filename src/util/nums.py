@@ -25,7 +25,7 @@ def truncate_to_first_significant_digit(num):
     if '.' in num_str:
         decimal_part = num_str.split('.')[1]
         first_significant_digit_index = next((i for i, char in enumerate(decimal_part) if char != '0'), len(decimal_part))
-        truncated_str = "0." + decimal_part[:first_significant_digit_index+1]
+        truncated_str = "0." + decimal_part[:first_significant_digit_index+2]
         return truncated_str
     else:
         return num

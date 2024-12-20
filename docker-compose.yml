@@ -1,0 +1,115 @@
+version: "3.9"
+
+services:
+  redis-master:
+    image: redis
+    container_name: redis-master
+    command: ["redis-server", "--requirepass", "redis_pass"]
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    attach: false
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.3
+
+  redis-slave:
+    image: redis:latest
+    container_name: redis-slave
+    command: ["redis-server", "/usr/local/etc/redis/redis-slave.conf"]
+    attach: false
+    depends_on:
+      - redis-master
+    volumes:
+      - ./redis/redis-slave.conf:/usr/local/etc/redis/redis-slave.conf
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.4
+
+  redis-sentinel:
+    image: redis:7
+    container_name: redis-sentinel
+    volumes:
+      - ./redis/sentinel.conf:/etc/redis/sentinel.conf
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: ["redis-sentinel", "/etc/redis/sentinel.conf"]
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.5
+    ports:
+      - "26379:26379"
+    depends_on:
+      - redis-master
+
+  redis-sentinel2:
+    image: redis:7
+    container_name: redis-sentinel2
+    volumes:
+      - ./redis/sentinel.conf:/etc/redis/sentinel.conf
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: ["redis-sentinel", "/etc/redis/sentinel.conf"]
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.6
+    ports:
+      - "26380:26379"
+    depends_on:
+      - redis-master
+
+  redis-sentinel3:
+    image: redis:7
+    container_name: redis-sentinel3
+    volumes:
+      - ./redis/sentinel.conf:/etc/redis/sentinel.conf
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: ["redis-sentinel", "/etc/redis/sentinel.conf"]
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.7
+    ports:
+      - "26381:26379"
+    depends_on:
+      - redis-master
+
+      
+  celery:
+    depends_on:
+      - redis-sentinel
+      - redis-sentinel2
+      - redis-sentinel3
+      
+    build:
+      context: .
+    expose:
+      - "5555"
+    ports:
+      - "5000:5000" 
+      - "5555:5555" 
+    volumes:
+      - .:/code
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.8
+    environment:
+      FLASK_PORT: 5000 
+      FLOWER_PORT: 5555
+      DBAAS_SENTINEL_HOSTS: 'redis-sentinel,redis-sentinel2,redis-sentinel3'
+      DBAAS_SENTINEL_PORT: 26379
+      DBAAS_SENTINEL_SERVICE_NAME: mymaster
+      DBAAS_SENTINEL_PASSWORD: redis_pass
+
+networks:
+  redis-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+    
+

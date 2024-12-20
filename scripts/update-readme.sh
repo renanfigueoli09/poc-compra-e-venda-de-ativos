@@ -1,0 +1,1 @@
+update-coverage.sh && update-tests.sh

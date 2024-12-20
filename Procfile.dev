@@ -1,3 +1,5 @@
-celery_schedule: newrelic-admin run-program celery -A src.worker beat --loglevel=$LOG_LEVEL
-celery_worker: newrelic-admin run-program celery -A src.worker worker --loglevel=$LOG_LEVEL --concurrency=1 
-flower: celery flower -A src.worker --purge_offline_workers=10 --port=$PORT
+api_flask: flask run --host=0.0.0.0
+
+celery_worker_boot: celery -A app.celery worker -Q boot --loglevel=info -E -n BOOT@%h 
+schedule: celery -A app.celery beat --loglevel=DEBUG
+flower: celery flower -A app.celery --port=$FLOWER_PORT 
