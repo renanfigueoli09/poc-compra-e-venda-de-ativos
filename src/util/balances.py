@@ -64,24 +64,15 @@ def is_usdt_balance_greater(client: Client) -> bool:
         bool: True se o saldo em USDT for maior, False caso contrário.
     """
     try:
-        # Obtém o saldo da conta
         account_info = client.get_account()
         balances = {item['asset']: float(item['free']) for item in account_info['balances']}
-
-        # Saldo de USDT e BTC
         usdt_balance = balances.get('USDT', 0.0)
         btc_balance = balances.get('BTC', 0.0)
-
-        # Pega o preço atual do BTC em USDT
         btc_price = float(client.get_symbol_ticker(symbol="BTCUSDT")['price'])
-
-        # Converte o saldo de BTC para o equivalente em USDT
         btc_in_usdt = btc_balance * btc_price
-
         print(f"Saldo em USDT: {usdt_balance}")
         print(f"Saldo em BTC (em USDT): {btc_in_usdt}")
 
-        # Compara os saldos
         return usdt_balance < btc_in_usdt
 
     except BinanceAPIException as e:

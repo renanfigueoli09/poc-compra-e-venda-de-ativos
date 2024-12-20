@@ -24,11 +24,6 @@ load_dotenv()
 @celery.task(queue="boot")
 def boot():
     from app import celery
-
-    response = requests.get("https://api.ipify.org?format=json")
-    ip = response.json()["ip"]
-    print(f"Seu IP público de origem é: {ip}")
-
     api_key = os.getenv("API_KEY")
     secret_key = os.getenv("API_SECRET")
     client_binance = Client(api_key, secret_key,)
@@ -52,13 +47,10 @@ def boot():
     usdt_balance = get_usdt_balance(
         client_binance=client_binance, active_operated=purchase_currency
     )
-    print(f" {purchase_currency}: {usdt_balance}")
     qaunt_active = convert_usdt_to_btc(
         usdt_balance=usdt_balance, client_binance=client_binance, symbol=active_code_
     )
     qaunt_active = truncate_to_first_significant_digit(qaunt_active)
-    print(f" {active_operated_}: {qaunt_active}")
-    print(qaunt_active)
     def get_data(codigo, intervalo):
         try:
             candles = client_binance.get_klines(
@@ -166,15 +158,3 @@ def boot():
     except BinanceRequestException as  Ex:
         raise {"error": Ex}
         
-    # while True:
-
-    #     update_date = get_data(codigo=active_code_, intervalo=period_candle)
-    #     current_position = commercial_strategy(
-    #         update_date,
-    #         active_code=active_code_,
-    #         active_operated=active_operated_,
-    #         quant=qaunt_active,
-    #         position=current_position,
-    #     )
-    #     print(f"aguardando proximo ciclo.... {period_candle}")
-    #     time.sleep(time_string_to_seconds(time_string=period_candle))
