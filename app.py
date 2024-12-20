@@ -12,7 +12,7 @@ celery = make_celery(flask_app)
 celery.conf.beat_schedule = {
     'BOOT': {
         'task': 'src.tasks.assets.boot',  # Nome correto da sua task
-        'schedule': crontab(minute='*/3'),  # A cada 3 minutos
+        'schedule': crontab(minute='*/15'),  # A cada 15 minutos
     },
 }
 from src.routes import *

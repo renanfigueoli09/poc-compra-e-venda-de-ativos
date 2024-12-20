@@ -43,7 +43,7 @@ def boot():
     active_code_ = "BTCUSDT"
     active_operated_ = "BTC"
     purchase_currency = "USDT"
-    period_candle = Client.KLINE_INTERVAL_3MINUTE
+    period_candle = Client.KLINE_INTERVAL_15MINUTE
     usdt_balance = get_usdt_balance(
         client_binance=client_binance, active_operated=purchase_currency
     )
